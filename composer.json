@@ -1,0 +1,32 @@
+{
+    "name": "northwoods/broker",
+    "description": "A conditional dispatcher for PSR-15 middleware",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Woody Gilk",
+            "email": "woody.gilk@gmail.com"
+        }
+    ],
+    "minimum-stability": "stable",
+    "require": {
+        "http-interop/http-middleware": "^0.4.1",
+        "psr/http-message": "^1.0",
+        "psr/container": "^1.0"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^5.7",
+        "eloquent/phony-phpunit": "^1.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Northwoods\\Broker\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Northwoods\\Broker\\": "tests/"
+        }
+    }
+}
