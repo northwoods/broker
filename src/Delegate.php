@@ -11,7 +11,7 @@ use SplObjectStorage;
 class Delegate implements DelegateInterface
 {
     /**
-     * @var SplObjectStorage
+     * @var array
      */
     private $middleware;
 
