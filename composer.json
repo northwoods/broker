@@ -19,6 +19,9 @@
         "phpunit/phpunit": "^5.7",
         "eloquent/phony-phpunit": "^1.0"
     },
+    "scripts": {
+        "test": "phpunit"
+    },
     "autoload": {
         "psr-4": {
             "Northwoods\\Broker\\": "src/"
