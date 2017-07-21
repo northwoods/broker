@@ -16,14 +16,13 @@ class Broker implements MiddlewareInterface
     private $container;
 
     /**
-     * @var SplObjectStorage
+     * @var array
      */
-    private $middleware;
+    private $middleware = [];
 
     public function __construct(ContainerInterface $container = null)
     {
         $this->container = $container;
-        $this->middleware = new SplObjectStorage();
     }
 
     /**
@@ -39,7 +38,7 @@ class Broker implements MiddlewareInterface
     // MiddlewareInterface
     public function process(ServerRequestInterface $request, DelegateInterface $delegate)
     {
-        $delegate = new Delegate($this->middleware, $delegate);
+        $delegate = new Delegate($this->middleware, $delegate, $this->container);
 
         return $delegate->process($request);
     }
@@ -64,31 +63,13 @@ class Broker implements MiddlewareInterface
         }
 
         foreach ($middleware as $mw) {
-            $this->addConditionalMiddleware($condition, $this->resolveMiddleware($mw));
+            $this->middleware[] = [
+                $condition,
+                $mw
+            ];
         }
 
         return $this;
-    }
-
-    /**
-     * @return void
-     */
-    private function addConditionalMiddleware(callable $condition, MiddlewareInterface $middleware)
-    {
-        $this->middleware[$middleware] = $condition;
-    }
-
-    /**
-     * @param string|MiddlewareInterface $middleware
-     * @return MiddlewareInterface
-     */
-    private function resolveMiddleware($middleware)
-    {
-        if ($middleware instanceof MiddlewareInterface) {
-            return $middleware;
-        }
-
-        return $this->container->get($middleware);
     }
 
     /**

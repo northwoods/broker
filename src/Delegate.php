@@ -3,6 +3,8 @@
 namespace Northwoods\Broker;
 
 use Interop\Http\ServerMiddleware\DelegateInterface;
+use Interop\Http\ServerMiddleware\MiddlewareInterface;
+use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use SplObjectStorage;
 
@@ -18,33 +20,41 @@ class Delegate implements DelegateInterface
      */
     private $nextDelegate;
 
-    public function __construct(SplObjectStorage $middleware, DelegateInterface $nextDelegate)
-    {
-        $this->middleware = clone $middleware;
-        $this->nextDelegate = $nextDelegate;
+    /**
+     * @var ContainerInterface
+     */
+    private $container;
 
-        // Rewind the middleware to the start
-        $this->middleware->rewind();
+    /**
+     * @var int
+     */
+    private $index = 0;
+
+    public function __construct(array $middleware, DelegateInterface $nextDelegate, ContainerInterface $container = null)
+    {
+        $this->middleware = $middleware;
+        $this->nextDelegate = $nextDelegate;
+        $this->container = $container;
     }
 
     // DelegateInterface
     public function process(ServerRequestInterface $request)
     {
-        /** @var MiddlewareInterface */
-        $middleware = $this->middleware->current();
-
-        if (empty($middleware)) {
+        if (empty($this->middleware[$this->index])) {
             return $this->nextDelegate->process($request);
         }
 
         /** @var callable */
-        $condition = $this->middleware[$middleware];
+        $condition = $this->middleware[$this->index][0];
+
+        /** @var MiddlewareInterface|string */
+        $middleware = $this->middleware[$this->index][1];
 
         /** @var DelegateInterface */
         $delegate = $this->nextDelegate();
 
         if ($condition($request)) {
-            return $middleware->process($request, $delegate);
+            return $this->resolveMiddleware($middleware)->process($request, $delegate);
         } else {
             return $delegate->process($request);
         }
@@ -56,8 +66,22 @@ class Delegate implements DelegateInterface
     private function nextDelegate()
     {
         $copy = clone $this;
-        $copy->middleware->next();
+        $copy->index++;
 
         return $copy;
     }
+
+    /**
+     * @param string|MiddlewareInterface $middleware
+     * @return MiddlewareInterface
+     */
+    private function resolveMiddleware($middleware)
+    {
+        if ($middleware instanceof MiddlewareInterface) {
+            return $middleware;
+        }
+
+        return $this->container->get($middleware);
+    }
+
 }
