@@ -2,8 +2,8 @@
 
 namespace Northwoods\Broker;
 
-use Interop\Http\ServerMiddleware\DelegateInterface;
-use Interop\Http\ServerMiddleware\MiddlewareInterface;
+use Interop\Http\Server\MiddlewareInterface;
+use Interop\Http\Server\RequestHandlerInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use SplObjectStorage;
@@ -30,17 +30,17 @@ class Broker implements MiddlewareInterface
      */
     public function handle(ServerRequestInterface $request, callable $default)
     {
-        $delegate = new CallableDelegate($default);
+        $handler = new CallableRequestHandler($default);
 
-        return $this->process($request, $delegate);
+        return $this->process($request, $handler);
     }
 
     // MiddlewareInterface
-    public function process(ServerRequestInterface $request, DelegateInterface $delegate)
+    public function process(ServerRequestInterface $request, RequestHandlerInterface $handler)
     {
-        $delegate = new Delegate($this->middleware, $delegate, $this->container);
+        $handler = new RequestHandler($this->middleware, $handler, $this->container);
 
-        return $delegate->process($request);
+        return $handler->handle($request);
     }
 
     /**

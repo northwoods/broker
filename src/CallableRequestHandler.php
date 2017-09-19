@@ -2,10 +2,10 @@
 
 namespace Northwoods\Broker;
 
-use Interop\Http\ServerMiddleware\DelegateInterface;
+use Interop\Http\Server\RequestHandlerInterface;
 use Psr\Http\Message\ServerRequestInterface;
 
-class CallableDelegate implements DelegateInterface
+class CallableRequestHandler implements RequestHandlerInterface
 {
     /**
      * @var callable
@@ -17,10 +17,8 @@ class CallableDelegate implements DelegateInterface
         $this->handler = $handler;
     }
 
-    /**
-     * @return \Psr\Http\Message\ResponseInterface
-     */
-    public function process(ServerRequestInterface $request)
+    // RequestHandlerInterface
+    public function handle(ServerRequestInterface $request)
     {
         return call_user_func($this->handler, $request);
     }

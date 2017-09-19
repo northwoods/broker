@@ -2,13 +2,13 @@
 
 namespace Northwoods\Broker;
 
-use Interop\Http\ServerMiddleware\DelegateInterface;
-use Interop\Http\ServerMiddleware\MiddlewareInterface;
+use Interop\Http\Server\MiddlewareInterface;
+use Interop\Http\Server\RequestHandlerInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use SplObjectStorage;
 
-class Delegate implements DelegateInterface
+class RequestHandler implements RequestHandlerInterface
 {
     /**
      * @var array
@@ -16,9 +16,9 @@ class Delegate implements DelegateInterface
     private $middleware;
 
     /**
-     * @var DelegateInterface $nextDelegate
+     * @var RequestHandlerInterface $nextRequestHandler
      */
-    private $nextDelegate;
+    private $nextRequestHandler;
 
     /**
      * @var ContainerInterface
@@ -30,18 +30,18 @@ class Delegate implements DelegateInterface
      */
     private $index = 0;
 
-    public function __construct(array $middleware, DelegateInterface $nextDelegate, ContainerInterface $container = null)
+    public function __construct(array $middleware, RequestHandlerInterface $nextRequestHandler, ContainerInterface $container = null)
     {
         $this->middleware = $middleware;
-        $this->nextDelegate = $nextDelegate;
+        $this->nextRequestHandler = $nextRequestHandler;
         $this->container = $container;
     }
 
-    // DelegateInterface
-    public function process(ServerRequestInterface $request)
+    // RequestHandlerInterface
+    public function handle(ServerRequestInterface $request)
     {
         if (empty($this->middleware[$this->index])) {
-            return $this->nextDelegate->process($request);
+            return $this->nextRequestHandler->handle($request);
         }
 
         /** @var callable */
@@ -50,20 +50,20 @@ class Delegate implements DelegateInterface
         /** @var MiddlewareInterface|string */
         $middleware = $this->middleware[$this->index][1];
 
-        /** @var DelegateInterface */
-        $delegate = $this->nextDelegate();
+        /** @var RequestHandlerInterface */
+        $handler = $this->nextRequestHandler();
 
         if ($condition($request)) {
-            return $this->resolveMiddleware($middleware)->process($request, $delegate);
+            return $this->resolveMiddleware($middleware)->process($request, $handler);
         } else {
-            return $delegate->process($request);
+            return $handler->handle($request);
         }
     }
 
     /**
-     * @return DelegateInterface
+     * @return RequestHandlerInterface
      */
-    private function nextDelegate()
+    private function nextRequestHandler()
     {
         $copy = clone $this;
         $copy->index++;
@@ -83,5 +83,4 @@ class Delegate implements DelegateInterface
 
         return $this->container->get($middleware);
     }
-
 }
