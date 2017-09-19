@@ -3,8 +3,8 @@
 namespace Northwoods\Broker;
 
 use Eloquent\Phony\Phpunit\Phony;
-use Interop\Http\ServerMiddleware\DelegateInterface;
-use Interop\Http\ServerMiddleware\MiddlewareInterface;
+use Interop\Http\Server\MiddlewareInterface;
+use Interop\Http\Server\RequestHandlerInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 
@@ -33,17 +33,17 @@ trait CanMock
     /**
      * @return ResponseInterface
      */
-    private function process(ServerRequestInterface $request = null, DelegateInterface $delegate = null)
+    private function process(ServerRequestInterface $request = null, RequestHandlerInterface $handler = null)
     {
         if (empty($request)) {
             $request = $this->mockRequest()->get();
         }
 
-        if (empty($delegate)) {
-            $delegate = $this->mockDelegate()->get();
+        if (empty($handler)) {
+            $handler = $this->mockRequestHandler()->get();
         }
 
-        return $this->broker->process($request, $delegate);
+        return $this->broker->process($request, $handler);
     }
 
     /**
@@ -69,8 +69,8 @@ trait CanMock
     {
         $middleware = Phony::mock(MiddlewareInterface::class);
 
-        $middleware->process->does(static function ($request, $delegate) {
-            return $delegate->process($request);
+        $middleware->process->does(static function ($request, $handler) {
+            return $handler->handle($request);
         });
 
         return $middleware;
@@ -79,16 +79,16 @@ trait CanMock
     /**
      * @return \Eloquent\Phony\Mock\Handle\InstanceHandle
      */
-    private function mockDelegate($response = null)
+    private function mockRequestHandler($response = null)
     {
         if (empty($response)) {
             $response = $this->mockResponse();
         }
 
-        $delegate = Phony::mock(DelegateInterface::class);
+        $handler = Phony::mock(RequestHandlerInterface::class);
 
-        $delegate->process->returns($response);
+        $handler->handle->returns($response);
 
-        return $delegate;
+        return $handler;
     }
 }
