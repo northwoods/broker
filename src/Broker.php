@@ -1,42 +1,35 @@
 <?php
+declare(strict_types=1);
 
 namespace Northwoods\Broker;
 
-use Interop\Http\Server\MiddlewareInterface;
-use Interop\Http\Server\RequestHandlerInterface;
-use Psr\Container\ContainerInterface;
-use Psr\Http\Message\ServerRequestInterface;
-use SplObjectStorage;
+use Interop\Http\Server\MiddlewareInterface as Middleware;
+use Interop\Http\Server\RequestHandlerInterface as Handler;
+use Psr\Container\ContainerInterface as Container;
+use Psr\Http\Message\ResponseInterface as Response;
+use Psr\Http\Message\ServerRequestInterface as Request;
 
-class Broker implements MiddlewareInterface
+class Broker implements Middleware
 {
-    /**
-     * @var ContainerInterface
-     */
+    /** @var Container */
     private $container;
 
-    /**
-     * @var array
-     */
+    /** @var array */
     private $middleware = [];
 
-    public function __construct(ContainerInterface $container = null)
+    public function __construct(Container $container = null)
     {
         $this->container = $container;
     }
 
-    /**
-     * @return \Psr\Http\Message\ResponseInterface
-     */
-    public function handle(ServerRequestInterface $request, callable $default)
+    public function handle(Request $request, callable $default): Response
     {
         $handler = new CallableRequestHandler($default);
 
         return $this->process($request, $handler);
     }
 
-    // MiddlewareInterface
-    public function process(ServerRequestInterface $request, RequestHandlerInterface $handler)
+    public function process(Request $request, Handler $handler): Response
     {
         $handler = new RequestHandler($this->middleware, $handler, $this->container);
 
@@ -44,38 +37,30 @@ class Broker implements MiddlewareInterface
     }
 
     /**
-     * @param array|string|MiddlewareInterface $middleware
-     * @return self
+     * @param array|string|Middleware $middleware
      */
-    public function always($middleware)
+    public function always($middleware): Broker
     {
         return $this->when($this->alwaysTrue(), $middleware);
     }
 
     /**
-     * @param array|string|MiddlewareInterface $middleware
-     * @return self
+     * @param array|string|Middleware $middleware
      */
-    public function when(callable $condition, $middleware)
+    public function when(callable $condition, $middleware): Broker
     {
         if (!is_array($middleware)) {
             $middleware = [$middleware];
         }
 
         foreach ($middleware as $mw) {
-            $this->middleware[] = [
-                $condition,
-                $mw
-            ];
+            $this->middleware[] = [$condition, $mw];
         }
 
         return $this;
     }
 
-    /**
-     * @return callable
-     */
-    private function alwaysTrue()
+    private function alwaysTrue(): callable
     {
         return static function () {
             return true;
