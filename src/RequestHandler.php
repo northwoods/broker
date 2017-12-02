@@ -2,43 +2,34 @@
 
 namespace Northwoods\Broker;
 
-use Interop\Http\Server\MiddlewareInterface;
-use Interop\Http\Server\RequestHandlerInterface;
-use Psr\Container\ContainerInterface;
-use Psr\Http\Message\ServerRequestInterface;
-use SplObjectStorage;
+use Interop\Http\Server\MiddlewareInterface as Middleware;
+use Interop\Http\Server\RequestHandlerInterface as Handler;
+use Psr\Container\ContainerInterface as Container;
+use Psr\Http\Message\ResponseInterface as Response;
+use Psr\Http\Message\ServerRequestInterface as Request;
 
-class RequestHandler implements RequestHandlerInterface
+class RequestHandler implements Handler
 {
-    /**
-     * @var array
-     */
+    /** @var array */
     private $middleware;
 
-    /**
-     * @var RequestHandlerInterface $nextRequestHandler
-     */
+    /** @var Handler */
     private $nextRequestHandler;
 
-    /**
-     * @var ContainerInterface
-     */
+    /** @var Container */
     private $container;
 
-    /**
-     * @var int
-     */
+    /** @var int */
     private $index = 0;
 
-    public function __construct(array $middleware, RequestHandlerInterface $nextRequestHandler, ContainerInterface $container = null)
+    public function __construct(array $middleware, Handler $nextRequestHandler, Container $container = null)
     {
         $this->middleware = $middleware;
         $this->nextRequestHandler = $nextRequestHandler;
         $this->container = $container;
     }
 
-    // RequestHandlerInterface
-    public function handle(ServerRequestInterface $request)
+    public function handle(Request $request): Response
     {
         if (empty($this->middleware[$this->index])) {
             return $this->nextRequestHandler->handle($request);
@@ -47,10 +38,10 @@ class RequestHandler implements RequestHandlerInterface
         /** @var callable */
         $condition = $this->middleware[$this->index][0];
 
-        /** @var MiddlewareInterface|string */
+        /** @var Middleware |string */
         $middleware = $this->middleware[$this->index][1];
 
-        /** @var RequestHandlerInterface */
+        /** @var Handler */
         $handler = $this->nextRequestHandler();
 
         if ($condition($request)) {
@@ -60,10 +51,7 @@ class RequestHandler implements RequestHandlerInterface
         }
     }
 
-    /**
-     * @return RequestHandlerInterface
-     */
-    private function nextRequestHandler()
+    private function nextRequestHandler(): Handler
     {
         $copy = clone $this;
         $copy->index++;
@@ -72,12 +60,11 @@ class RequestHandler implements RequestHandlerInterface
     }
 
     /**
-     * @param string|MiddlewareInterface $middleware
-     * @return MiddlewareInterface
+     * @param string|Middleware $middleware
      */
-    private function resolveMiddleware($middleware)
+    private function resolveMiddleware($middleware): Middleware
     {
-        if ($middleware instanceof MiddlewareInterface) {
+        if ($middleware instanceof Middleware) {
             return $middleware;
         }
 

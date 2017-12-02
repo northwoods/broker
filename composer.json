@@ -11,13 +11,13 @@
     ],
     "minimum-stability": "stable",
     "require": {
-        "http-interop/http-middleware": "^0.5",
+        "http-interop/http-server-middleware": "^1.0",
         "psr/http-message": "^1.0",
         "psr/container": "^1.0"
     },
     "require-dev": {
-        "phpunit/phpunit": "^5.7",
-        "eloquent/phony-phpunit": "^1.0"
+        "phpunit/phpunit": "^6.0",
+        "eloquent/phony-phpunit": "^3.0"
     },
     "scripts": {
         "test": "phpunit"
