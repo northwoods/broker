@@ -10,19 +10,26 @@ php:
   - 7.2
   - nightly
 
+env: MINIMUM_VERSIONS=false
+
 matrix:
-  allow_failures:
-    - php: nightly
+  fast_finish: true
   include:
     - php: 7.0
-      env: 'COMPOSER_FLAGS="--prefer-stable --prefer-lowest"'
+      env: MINIMUM_VERSIONS=true
+  allow_failures:
+    - php: nightly
 
-before_script:
-  - travis_retry composer update ${COMPOSER_FLAGS} --no-interaction --prefer-source
+install:
+  - if [[ $MINIMUM_VERSIONS = false ]]; then composer install; fi
+  - if [[ $MINIMUM_VERSIONS = true ]]; then composer update --no-interaction --prefer-lowest; fi
 
 script:
   - composer test
 
 after_script:
-  - bash -c '[[ -f "build/logs/clover.xml" ]] && wget https://scrutinizer-ci.com/ocular.phar'
-  - bash -c '[[ -f "build/logs/clover.xml" ]] && php ocular.phar code-coverage:upload --format=php-clover build/logs/clover.xml'
+  - |
+    if [ -f "build/logs/clover.xml" ]; then
+      wget https://scrutinizer-ci.com/ocular.phar
+      php ocular.phar code-coverage:upload --format=php-clover build/logs/clover.xml
+    fi
