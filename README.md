@@ -74,7 +74,7 @@ if no middleware can handle the request.
 
 ```php
 // Define the callable to create a 404 response
-$default = [Acme\ResponseFactor::class, 'notFound'];
+$default = [Acme\ResponseFactory::class, 'notFound'];
 
 // Execute the middleware as a dispatcher
 $response = $broker->handle($request, $default);
@@ -84,7 +84,7 @@ Broker also implements `MiddlewareInterface` and can be used as a middleware:
 
 ```
 // Execute the broker like any other PSR-15 middleware
-$response = $broker->process($request, $delegate);
+$response = $broker->process($request, $handler);
 ```
 
 ## License
