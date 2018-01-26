@@ -3,15 +3,15 @@ declare(strict_types=1);
 
 namespace Northwoods\Broker;
 
-use Psr\Http\Server\MiddlewareInterface as Middleware;
-use Psr\Http\Server\RequestHandlerInterface as Handler;
 use Psr\Container\ContainerInterface as Container;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
+use Psr\Http\Server\MiddlewareInterface as Middleware;
+use Psr\Http\Server\RequestHandlerInterface as Handler;
 
 class Broker implements Middleware
 {
-    /** @var Container */
+    /** @var Container|null */
     private $container;
 
     /** @var array */
