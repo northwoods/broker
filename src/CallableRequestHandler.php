@@ -2,7 +2,7 @@
 
 namespace Northwoods\Broker;
 
-use Interop\Http\Server\RequestHandlerInterface as Handler;
+use Psr\Http\Server\RequestHandlerInterface as Handler;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 
