@@ -1,12 +1,13 @@
 <?php
+declare(strict_types=1);
 
 namespace Northwoods\Broker;
 
-use Psr\Http\Server\MiddlewareInterface as Middleware;
-use Psr\Http\Server\RequestHandlerInterface as Handler;
 use Psr\Container\ContainerInterface as Container;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
+use Psr\Http\Server\MiddlewareInterface as Middleware;
+use Psr\Http\Server\RequestHandlerInterface as Handler;
 
 class RequestHandler implements Handler
 {
@@ -16,7 +17,7 @@ class RequestHandler implements Handler
     /** @var Handler */
     private $nextRequestHandler;
 
-    /** @var Container */
+    /** @var Container|null */
     private $container;
 
     /** @var int */
@@ -38,7 +39,7 @@ class RequestHandler implements Handler
         /** @var callable */
         $condition = $this->middleware[$this->index][0];
 
-        /** @var Middleware |string */
+        /** @var Middleware|string */
         $middleware = $this->middleware[$this->index][1];
 
         /** @var Handler */
