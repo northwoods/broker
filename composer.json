@@ -11,7 +11,7 @@
     ],
     "minimum-stability": "stable",
     "require": {
-        "http-interop/http-server-middleware": "^1.0",
+        "psr/http-server-middleware": "^1.0",
         "psr/http-message": "^1.0",
         "psr/container": "^1.0"
     },
