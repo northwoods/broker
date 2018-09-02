@@ -29,9 +29,9 @@ composer require northwoods/broker
 
 ## Usage
 
-Broker works best when combined with a [PSR-11 container][psr-11]. When a container
-is provided middleware can be added by class name. Without the container middleware
-must be fully constructed.
+Broker works best when combined with a [PSR-11 container][psr-11].
+When a container is provided, middleware can be added by service key which will be resolved to a service at the time when that middlewre is processed.
+Without the container middleware must be fully constructed.
 
 ```php
 use Northwoods\Broker\Broker;
