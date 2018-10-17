@@ -3,67 +3,68 @@ declare(strict_types=1);
 
 namespace Northwoods\Broker;
 
-use Psr\Container\ContainerInterface as Container;
-use Psr\Http\Message\ResponseInterface as Response;
-use Psr\Http\Message\ServerRequestInterface as Request;
-use Psr\Http\Server\MiddlewareInterface as Middleware;
-use Psr\Http\Server\RequestHandlerInterface as Handler;
+use OutOfBoundsException;
+use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
+use Psr\Http\Server\MiddlewareInterface;
+use Psr\Http\Server\RequestHandlerInterface;
 
-class Broker implements Middleware
+class Broker implements
+    MiddlewareInterface,
+    RequestHandlerInterface
 {
-    /** @var Container|null */
-    private $container;
-
-    /** @var array */
+    /** @var MiddlewareInterface[] */
     private $middleware = [];
 
-    public function __construct(Container $container = null)
-    {
-        $this->container = $container;
-    }
-
-    public function handle(Request $request, callable $default): Response
-    {
-        $handler = new CallableRequestHandler($default);
-
-        return $this->process($request, $handler);
-    }
-
-    public function process(Request $request, Handler $handler): Response
-    {
-        $handler = new RequestHandler($this->middleware, $handler, $this->container);
-
-        return $handler->handle($request);
-    }
-
     /**
-     * @param array|string|Middleware $middleware
+     * Add middleware to the end of the stack
      */
-    public function always($middleware): Broker
+    public function append(MiddlewareInterface ...$middleware): self
     {
-        return $this->when($this->alwaysTrue(), $middleware);
-    }
-
-    /**
-     * @param array|string|Middleware $middleware
-     */
-    public function when(callable $condition, $middleware): Broker
-    {
-        if (!is_array($middleware)) {
-            $middleware = [$middleware];
-        }
-
-        foreach ($middleware as $mw) {
-            $this->middleware[] = [$condition, $mw];
-        }
+        array_push($this->middleware, ...$middleware);
 
         return $this;
     }
 
-    private function alwaysTrue(): callable
+    /**
+     * Add middleware to the beginning of the stack
+     */
+    public function prepend(MiddlewareInterface ...$middleware): self
     {
-        return static function () {
-            return true;
-        };
+        array_unshift($this->middleware, ...$middleware);
+
+        return $this;
+    }
+
+    // RequestHandlerInterface
+    public function handle(ServerRequestInterface $request): ResponseInterface
+    {
+        $broker = clone $this;
+
+        return $broker->nextMiddleware()->process($request, $broker);
+    }
+
+    // MiddlewareInterface
+    public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
+    {
+        try {
+            return $this->handle($request);
+        } catch (OutOfBoundsException $e) {
+            return $handler->handle($request);
+        }
+    }
+
+    /**
+     * @throws OutOfBoundsException If no middleware is available
+     */
+    private function nextMiddleware(): MiddlewareInterface
+    {
+        $middleware = array_shift($this->middleware);
+
+        if ($middleware === null) {
+            throw new OutOfBoundsException("End of middleware stack");
+        }
+
+        return $middleware;
     }
 }
