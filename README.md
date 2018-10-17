@@ -4,7 +4,7 @@ Northwoods Broker
 [![Become a Supporter](https://img.shields.io/badge/patreon-sponsor%20me-e6461a.svg)](https://www.patreon.com/shadowhand)
 [![Latest Stable Version](https://img.shields.io/packagist/v/northwoods/broker.svg)](https://packagist.org/packages/northwoods/broker)
 [![License](https://img.shields.io/packagist/l/northwoods/broker.svg)](https://github.com/northwoods/broker/blob/master/LICENSE)
-[![Build Status](https://travis-ci.org/northwoods/broker.svg)](https://travis-ci.org/northwoods/broker)
+[![Build Status](https://travis-ci.com/northwoods/broker.svg)](https://travis-ci.com/northwoods/broker)
 [![Code Coverage](https://scrutinizer-ci.com/g/northwoods/broker/badges/coverage.png?b=master)](https://scrutinizer-ci.com/g/northwoods/broker/?branch=master)
 [![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/northwoods/broker/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/northwoods/broker/?branch=master)
 
