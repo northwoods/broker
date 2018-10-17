@@ -8,17 +8,9 @@ Northwoods Broker
 [![Code Coverage](https://scrutinizer-ci.com/g/northwoods/broker/badges/coverage.png?b=master)](https://scrutinizer-ci.com/g/northwoods/broker/?branch=master)
 [![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/northwoods/broker/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/northwoods/broker/?branch=master)
 
-Broker is a [PSR-15][psr-15] middleware dispatcher that uses conditional matching.
-As opposed to most middleware dispatcher, Broker verifies each middleware
-can be applied to the request before executing it. This allows for a centralized
-configuration of middleware without compromising flexibility.
+Broker is a dead simple [PSR-15][psr-15] middleware dispatcher. Broker implements
+both `RequestHandlerInterface` and `MiddlewareInterface` for maximum flexibility.
 
-Attempts to be [PSR-1][psr-1], [PSR-2][psr-2], [PSR-4][psr-4], and [PSR-15][psr-15] compliant.
-
-[psr-1]: http://www.php-fig.org/psr/psr-1/
-[psr-2]: http://www.php-fig.org/psr/psr-2/
-[psr-4]: http://www.php-fig.org/psr/psr-4/
-[psr-11]: http://www.php-fig.org/psr/psr-11/
 [psr-15]: http://www.php-fig.org/psr/psr-15/
 
 ## Install
@@ -29,64 +21,43 @@ composer require northwoods/broker
 
 ## Usage
 
-Broker works best when combined with a [PSR-11 container][psr-11].
-When a container is provided, middleware can be added by service key which will be resolved to a service at the time when that middlewre is processed.
-Without the container middleware must be fully constructed.
-
 ```php
+use Acme\Middleware;
 use Northwoods\Broker\Broker;
 
-$broker = new Broker($container);
+/** @var \Psr\Http\Message\ServerRequestInterface */
+$request = /* any server request */;
+
+// Use append() or prepend() to add middleware
+$broker = new Broker();
+$broker->append(new Middleware\ParseRequest());
+$broker->prepend(new Middleware\CheckIp());
+
+/** @var \Psr\Http\Message\ResponseInterface */
+$response = $broker->handle($request);
 ```
 
-Broker operates on conditions. The middleware will not be executed unless the
-condition returns `true`. Because some middleware is not conditional the `always()`
-method makes it easy to add middleware that must be executed on every request.
-The `when()` method accepts a condition and a list of middleware to execute if
-the condition passes. All middleware is executed in the order added.
+### `append(...$middleware)`
 
-```php
-// Always execute these middleware
-$broker->always([
-    Acme\HandleErrors::class,
-    Acme\DetectClientIp::class,
-]);
+Add one or more middleware to the end of the stack.
 
-// Do we need to redirect to a secure connection?
-$broker->when(
-    function (ServerRequestInterface $request) {
-        $scheme = $request->getUri()->getScheme();
-        return $scheme !== 'https';
-    },
-    Acme\RedirectHttps::class,
-);
+### `prepend(...$middleware)`
 
-// Add more middleware to be executed
-$broker->always([
-    Acme\ParseBody::class,
-    Acme\HandleRequest::class,
-]);
-```
+Add one or more middleware to be beginning of the stack.
 
-To dispatch the middleware call the `handle()` method with a request instance
-and a callable `$default` that returns the response, typically a `404 Not Found`,
-if no middleware can handle the request.
+### `handle($request)`
 
-```php
-// Define the callable to create a 404 response
-$default = [Acme\ResponseFactory::class, 'notFound'];
+Dispatch the middleware stack as a request handler. If the end of the stack is
+reached and no response has been generated, an `OutOfBoundsException` will
+be thrown.
 
-// Execute the middleware as a dispatcher
-$response = $broker->handle($request, $default);
-```
+### `process($request, $handler)`
 
-Broker also implements `MiddlewareInterface` and can be used as a middleware:
+Dispatch the middleware stack as a middleware. If the end of the stack is reached
+and no response has been generated, the `$handler` will be called.
 
-```
-// Execute the broker like any other PSR-15 middleware
-$response = $broker->process($request, $handler);
-```
+## Suggested Packages
 
-## License
-
-MIT
+- Conditional middleware execution can be provided by [northwoods/conditional-middleware](https://github.com/northwoods/conditional-middleware)
+- Lazy middleware instantiation can be provided by [northwoods/lazy-middleware](https://github.com/northwoods/lazy-middleware)
+- Response sending can be provided by [http-interop/response-sender](https://github.com/http-interop/response-sender)

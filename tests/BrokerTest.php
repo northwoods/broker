@@ -1,83 +1,107 @@
 <?php
+declare(strict_types=1);
 
 namespace Northwoods\Broker;
 
+use Eloquent\Phony\Mock\Handle\InstanceHandle;
 use Eloquent\Phony\Phpunit\Phony;
+use OutOfBoundsException;
 use PHPUnit\Framework\TestCase;
+use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
+use Psr\Http\Server\MiddlewareInterface;
+use Psr\Http\Server\RequestHandlerInterface;
 
 class BrokerTest extends TestCase
 {
-    use CanMock;
-
-    /**
-     * @var Broker
-     */
+    /** @var Broker */
     private $broker;
 
-    public function setUp()
+    public function setUp(): void
     {
         $this->broker = new Broker();
     }
 
-    public function testAlways()
+    public function testCanAppendMiddleware(): void
     {
         // Mock
         $mw1 = $this->mockMiddleware();
         $mw2 = $this->mockMiddleware();
 
+        $this->broker->append($mw1->get(), $mw2->get());
+
         // Execute
-        $this->broker->always([
-            $mw1->get(),
-            $mw2->get(),
-        ]);
+        $response = $this->broker->process(
+            $this->mockRequest()->get(),
+            $this->mockHandler()->get()
+        );
 
         // Verify
-        $this->assertResponse($this->process());
-
-        Phony::inOrder(...[
-            $mw1->process->called(),
-            $mw2->process->called(),
-        ]);
+        Phony::inOrder(
+            $mw1->process->once()->called(),
+            $mw2->process->once()->called()
+        );
     }
 
-    public function testWhen()
+    public function testCanPrependMiddleware(): void
     {
         // Mock
         $mw1 = $this->mockMiddleware();
         $mw2 = $this->mockMiddleware();
-        $mw3 = $this->mockMiddleware();
+
+        $this->broker->append($mw1->get());
+        $this->broker->prepend($mw2->get());
 
         // Execute
-        $never = static function () {
-            return false;
-        };
-
-        $this->broker->always($mw1->get());
-        $this->broker->when($never, $mw2->get());
-        $this->broker->always($mw3->get());
+        $response = $this->broker->process(
+            $this->mockRequest()->get(),
+            $this->mockHandler()->get()
+        );
 
         // Verify
-        $this->assertResponse($this->process());
-
-        $mw2->noInteraction();
-
-        Phony::inOrder(...[
-            $mw1->process->called(),
-            $mw3->process->called(),
-        ]);
+        Phony::inOrder(
+            $mw2->process->once()->called(),
+            $mw1->process->once()->called()
+        );
     }
 
-    public function testHandle()
+    public function testCannotHandleWithoutMiddleware(): void
     {
-        // Mock
-        $default = Phony::stub();
-        $default->returns($this->mockResponse());
+        // Expect
+        $this->expectException(OutOfBoundsException::class);
 
-        // Verify
-        $this->assertResponse($this->handle($default));
+        // Execute
+        $this->broker->handle(
+            $this->mockRequest()->get()
+        );
+    }
 
-        Phony::inOrder(...[
-            $default->called(),
-        ]);
+    private function mockHandler(): InstanceHandle
+    {
+        $handler = Phony::mock(RequestHandlerInterface::class);
+        $handler->handle->returns($this->mockResponse());
+
+        return $handler;
+    }
+
+    private function mockMiddleware(): InstanceHandle
+    {
+        $middleware = Phony::mock(MiddlewareInterface::class);
+
+        $middleware->process->does(function ($request, $handler) {
+            return $handler->handle($request);
+        });
+
+        return $middleware;
+    }
+
+    private function mockRequest(): InstanceHandle
+    {
+        return Phony::mock(ServerRequestInterface::class);
+    }
+
+    private function mockResponse(): InstanceHandle
+    {
+        return Phony::mock(ResponseInterface::class);
     }
 }

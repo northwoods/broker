@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<ruleset name="Default">
+    <!-- show progress -->
+    <arg value="p"/>
+
+    <!-- check source and tests -->
+    <file>src</file>
+    <file>tests</file>
+
+    <!-- enable PSR-1 and PSR-2 checking -->
+    <rule ref="PSR1"/>
+    <rule ref="PSR2"/>
+</ruleset>
